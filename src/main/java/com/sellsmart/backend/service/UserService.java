@@ -4,6 +4,8 @@ import com.google.api.core.ApiFuture;
 import com.google.cloud.firestore.*;
 import com.google.firebase.cloud.FirestoreClient;
 import com.sellsmart.backend.model.User;
+import com.sellsmart.backend.util.EmailLoader;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -14,12 +16,10 @@ import java.util.concurrent.ExecutionException;
 @Service
 public class UserService {
 
-    private final Set<String> authorizedEmails = Set.of(
-            "client1@example.com", "client2@example.com", "hrittija2001@gmail.com"
-    );
+    private final Set<String> authorizedEmails = EmailLoader.loadEmails("/authorized-emails.txt");
 
     @Autowired
-    private PasswordEncoder passwordEncoder; // Injected encoder
+    private PasswordEncoder passwordEncoder; 
 
     public String register(User user) throws ExecutionException, InterruptedException {
         String email = user.getEmail().trim().toLowerCase();
@@ -36,10 +36,9 @@ public class UserService {
             return "Already registered";
         }
 
-        // 🔐 Hash the password
         String hashedPassword = passwordEncoder.encode(user.getPassword());
         user.setPassword(hashedPassword);
-        user.setEmail(email); // Save normalized email
+        user.setEmail(email); 
 
         ApiFuture<WriteResult> result = docRef.set(user);
         return "Registered successfully at: " + result.get().getUpdateTime();
@@ -55,7 +54,6 @@ public class UserService {
         User storedUser = snapshot.toObject(User.class);
         if (storedUser == null) return "Login error";
 
-        // ✅ Check hashed password
         if (!passwordEncoder.matches(user.getPassword(), storedUser.getPassword())) {
             return "Incorrect password";
         }

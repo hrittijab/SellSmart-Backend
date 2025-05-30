@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Map;
 
 
-@CrossOrigin(origins = "http://localhost:3000") // Allow frontend to connect
+@CrossOrigin(origins = "http://localhost:3000") 
 @RestController
 @RequestMapping("/api/auth")
 public class UserController {
@@ -23,7 +23,7 @@ public class UserController {
             if (result.contains("successfully")) {
                 return ResponseEntity.ok(result);
             } else {
-                return ResponseEntity.status(403).body(result); // unauthorized email, already registered, etc.
+                return ResponseEntity.status(403).body(result); 
             }
         } catch (Exception e) {
             return ResponseEntity.status(500).body("Error: " + e.getMessage());
@@ -37,7 +37,7 @@ public class UserController {
             if (result.equals("Login successful")) {
                 return ResponseEntity.ok(result);
             } else {
-                return ResponseEntity.status(403).body(result); // Not registered or wrong password
+                return ResponseEntity.status(403).body(result); 
             }
         } catch (Exception e) {
             return ResponseEntity.status(500).body("Error: " + e.getMessage());

@@ -15,18 +15,22 @@ public class FirebaseInitializer {
     @PostConstruct
     public void init() {
         try {
-            FileInputStream serviceAccount =
-                    new FileInputStream("src/main/resources/firebase-service-account.json");
+            if (FirebaseApp.getApps().isEmpty()) {
+                FileInputStream serviceAccount =
+                        new FileInputStream("src/main/resources/firebase-service-account.json");
 
-            FirebaseOptions options = FirebaseOptions.builder()
-                    .setCredentials(GoogleCredentials.fromStream(serviceAccount))
-                    .build();
+                FirebaseOptions options = FirebaseOptions.builder()
+                        .setCredentials(GoogleCredentials.fromStream(serviceAccount))
+                        .build();
 
-            FirebaseApp.initializeApp(options);
-            System.out.println("✅ Firebase initialized successfully.");
+                FirebaseApp.initializeApp(options);
+                System.out.println(" Firebase initialized successfully.");
+            } else {
+                System.out.println(" Firebase already initialized. Skipping...");
+            }
         } catch (IOException e) {
             e.printStackTrace();
-            System.out.println("❌ Firebase initialization failed.");
+            System.out.println(" Firebase initialization failed.");
         }
     }
 }
