@@ -16,7 +16,7 @@ import java.util.concurrent.ExecutionException;
 @Service
 public class UserService {
 
-    private final Set<String> authorizedEmails = EmailLoader.loadEmails("/authorized-emails.txt");
+private final Set<String> authorizedEmails = EmailLoader.loadEmails("/etc/secrets/authorized-emails.txt");
 
     @Autowired
     private PasswordEncoder passwordEncoder; 
