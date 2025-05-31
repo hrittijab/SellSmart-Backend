@@ -14,7 +14,7 @@ import java.util.concurrent.ExecutionException;
 
 @RestController
 @RequestMapping("/api/sales")
-@CrossOrigin(origins = "http://localhost:3000")
+@CrossOrigin(origins = "https://sellsmart2025.netlify.app")
 public class SalesController {
 
     @PostMapping("/add")

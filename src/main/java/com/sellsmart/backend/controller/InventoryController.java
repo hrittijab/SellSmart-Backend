@@ -12,7 +12,7 @@ import java.util.concurrent.ExecutionException;
 
 @RestController
 @RequestMapping("/api/inventory")
-@CrossOrigin(origins = "http://localhost:3000")
+@CrossOrigin(origins = "https://sellsmart2025.netlify.app")
 public class InventoryController {
 
     private static final String USERS_COLLECTION = "users";
