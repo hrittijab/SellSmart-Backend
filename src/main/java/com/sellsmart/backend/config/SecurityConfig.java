@@ -19,14 +19,14 @@ public class SecurityConfig {
             .csrf().disable()
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(
-                    "/api/auth/**",  
-                    "/ping"          
+                    "/",              
+                    "/api/auth/**",   
+                    "/ping"           
                 ).permitAll()
-                .anyRequest().authenticated() 
+                .anyRequest().authenticated()
             );
         return http.build();
     }
-
 
     @Bean
     public PasswordEncoder passwordEncoder() {
