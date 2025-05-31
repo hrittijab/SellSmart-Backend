@@ -9,12 +9,16 @@ import com.sellsmart.backend.util.EmailLoader;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
 @Service
 public class UserService {
+
+    private static final Logger logger = LoggerFactory.getLogger(UserService.class);
 
     // ✅ Load from Render secret file path
     private final Set<String> authorizedEmails = EmailLoader.loadEmails("/etc/secrets/authorized-emails.txt");
@@ -25,10 +29,11 @@ public class UserService {
     public String register(User user) throws ExecutionException, InterruptedException {
         String email = user.getEmail().trim().toLowerCase();
 
-        System.out.println("🔍 Attempting to register email: " + email);
-        System.out.println("✅ Authorized list: " + authorizedEmails);
+        logger.info("🔍 Attempting to register email: {}", email);
+        logger.info("✅ Authorized list: {}", authorizedEmails);
 
         if (!authorizedEmails.contains(email)) {
+            logger.warn("❌ Registration failed: unauthorized email {}", email);
             return "Email not authorized";
         }
 
@@ -37,6 +42,7 @@ public class UserService {
 
         DocumentSnapshot snapshot = docRef.get().get();
         if (snapshot.exists()) {
+            logger.info("ℹ️ User already registered: {}", email);
             return "Already registered";
         }
 
@@ -45,6 +51,7 @@ public class UserService {
         user.setEmail(email);
 
         ApiFuture<WriteResult> result = docRef.set(user);
+        logger.info("✅ User registered successfully: {}", email);
         return "Registered successfully at: " + result.get().getUpdateTime();
     }
 
@@ -53,26 +60,38 @@ public class UserService {
         Firestore db = FirestoreClient.getFirestore();
         DocumentSnapshot snapshot = db.collection("users").document(email).get().get();
 
-        if (!snapshot.exists()) return "Not registered";
+        if (!snapshot.exists()) {
+            logger.warn("❌ Login failed: user not found for email {}", email);
+            return "Not registered";
+        }
 
         User storedUser = snapshot.toObject(User.class);
-        if (storedUser == null) return "Login error";
+        if (storedUser == null) {
+            logger.error("❌ Login error: stored user is null for email {}", email);
+            return "Login error";
+        }
 
         if (!passwordEncoder.matches(user.getPassword(), storedUser.getPassword())) {
+            logger.warn("❌ Login failed: incorrect password for {}", email);
             return "Incorrect password";
         }
 
+        logger.info("✅ Login successful for {}", email);
         return "Login successful";
     }
 
     public boolean isRegistered(String emailRaw) throws ExecutionException, InterruptedException {
         String email = emailRaw.trim().toLowerCase();
         Firestore db = FirestoreClient.getFirestore();
-        return db.collection("users").document(email).get().get().exists();
+        boolean exists = db.collection("users").document(email).get().get().exists();
+        logger.info("📌 Checked registration status for {}: {}", email, exists);
+        return exists;
     }
 
     public boolean isAuthorized(String emailRaw) {
         String email = emailRaw.trim().toLowerCase();
-        return authorizedEmails.contains(email);
+        boolean authorized = authorizedEmails.contains(email);
+        logger.info("📌 Checked authorization for {}: {}", email, authorized);
+        return authorized;
     }
 }
