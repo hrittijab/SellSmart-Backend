@@ -21,6 +21,7 @@ public class SecurityConfig {
                 .requestMatchers(
                     "/",              
                     "/api/auth/**",   
+                    "/api/inventory/**", 
                     "/ping"           
                 ).permitAll()
                 .anyRequest().authenticated()
