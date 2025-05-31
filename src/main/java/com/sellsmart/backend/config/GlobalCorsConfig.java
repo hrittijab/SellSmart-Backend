@@ -14,10 +14,7 @@ public class GlobalCorsConfig {
             @Override
             public void addCorsMappings(CorsRegistry registry) {
                 registry.addMapping("/**")
-                        .allowedOrigins(
-                            "https://sellsmart2025.netlify.app",
-                            "http://localhost:3000"
-                        )
+                        .allowedOrigins("*") 
                         .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                         .allowedHeaders("*");
             }
