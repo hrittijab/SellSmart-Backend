@@ -16,13 +16,17 @@ import java.util.concurrent.ExecutionException;
 @Service
 public class UserService {
 
-private final Set<String> authorizedEmails = EmailLoader.loadEmails("/etc/secrets/authorized-emails.txt");
+    // ✅ Load from Render secret file path
+    private final Set<String> authorizedEmails = EmailLoader.loadEmails("/etc/secrets/authorized-emails.txt");
 
     @Autowired
-    private PasswordEncoder passwordEncoder; 
+    private PasswordEncoder passwordEncoder;
 
     public String register(User user) throws ExecutionException, InterruptedException {
         String email = user.getEmail().trim().toLowerCase();
+
+        System.out.println("🔍 Attempting to register email: " + email);
+        System.out.println("✅ Authorized list: " + authorizedEmails);
 
         if (!authorizedEmails.contains(email)) {
             return "Email not authorized";
@@ -38,7 +42,7 @@ private final Set<String> authorizedEmails = EmailLoader.loadEmails("/etc/secret
 
         String hashedPassword = passwordEncoder.encode(user.getPassword());
         user.setPassword(hashedPassword);
-        user.setEmail(email); 
+        user.setEmail(email);
 
         ApiFuture<WriteResult> result = docRef.set(user);
         return "Registered successfully at: " + result.get().getUpdateTime();
