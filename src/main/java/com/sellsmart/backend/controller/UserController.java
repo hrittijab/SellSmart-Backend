@@ -7,8 +7,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.Map;
 
-
-@CrossOrigin(origins = "https://sellsmart2025.netlify.app")
 @RestController
 @RequestMapping("/api/auth")
 public class UserController {
@@ -31,16 +29,16 @@ public class UserController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<String> login(@RequestBody User user) {
+    public ResponseEntity<?> login(@RequestBody User user) {
         try {
-            String result = userService.login(user);
-            if (result.equals("Login successful")) {
+            Map<String, String> result = userService.login(user);
+            if (result.containsKey("token")) {
                 return ResponseEntity.ok(result);
             } else {
-                return ResponseEntity.status(403).body(result); 
+                return ResponseEntity.status(403).body(result);
             }
         } catch (Exception e) {
-            return ResponseEntity.status(500).body("Error: " + e.getMessage());
+            return ResponseEntity.status(500).body(Map.of("error", "Internal server error"));
         }
     }
 
@@ -52,23 +50,23 @@ public class UserController {
             return ResponseEntity.status(500).body(false);
         }
     }
+
     @GetMapping("/check-email")
-public ResponseEntity<?> checkEmail(@RequestParam String email) {
-    boolean authorized = userService.isAuthorized(email);
-    boolean registered = false;
+    public ResponseEntity<?> checkEmail(@RequestParam String email) {
+        boolean authorized = userService.isAuthorized(email);
+        boolean registered = false;
 
-    if (authorized) {
-        try {
-            registered = userService.isRegistered(email);
-        } catch (Exception e) {
-            return ResponseEntity.status(500).body("Error checking registration");
+        if (authorized) {
+            try {
+                registered = userService.isRegistered(email);
+            } catch (Exception e) {
+                return ResponseEntity.status(500).body("Error checking registration");
+            }
         }
+
+        return ResponseEntity.ok(Map.of(
+            "authorized", authorized,
+            "registered", registered
+        ));
     }
-
-    return ResponseEntity.ok(Map.of(
-        "authorized", authorized,
-        "registered", registered
-    ));
-}
-
-}
+} 

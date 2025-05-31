@@ -4,6 +4,7 @@ import com.google.api.core.ApiFuture;
 import com.google.cloud.firestore.*;
 import com.google.firebase.cloud.FirestoreClient;
 import com.sellsmart.backend.model.InventoryItem;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
@@ -12,13 +13,13 @@ import java.util.concurrent.ExecutionException;
 
 @RestController
 @RequestMapping("/api/inventory")
-@CrossOrigin(origins = "https://sellsmart2025.netlify.app")
 public class InventoryController {
 
     private static final String USERS_COLLECTION = "users";
 
     @PostMapping("/add")
-    public String addItem(@RequestParam String email, @RequestBody InventoryItem item) throws ExecutionException, InterruptedException {
+    public String addItem(HttpServletRequest request, @RequestBody InventoryItem item) throws ExecutionException, InterruptedException {
+        String email = (String) request.getAttribute("userEmail");
         Firestore db = FirestoreClient.getFirestore();
         CollectionReference userInventory = db.collection(USERS_COLLECTION).document(email).collection("inventory");
         DocumentReference docRef = userInventory.document();
@@ -29,7 +30,8 @@ public class InventoryController {
     }
 
     @PutMapping("/update/{id}")
-    public String updateItem(@RequestParam String email, @PathVariable String id, @RequestBody InventoryItem updatedItem) throws ExecutionException, InterruptedException {
+    public String updateItem(HttpServletRequest request, @PathVariable String id, @RequestBody InventoryItem updatedItem) throws ExecutionException, InterruptedException {
+        String email = (String) request.getAttribute("userEmail");
         Firestore db = FirestoreClient.getFirestore();
         updatedItem.setId(id);
         db.collection(USERS_COLLECTION).document(email).collection("inventory").document(id).set(updatedItem).get();
@@ -37,14 +39,16 @@ public class InventoryController {
     }
 
     @DeleteMapping("/delete/{id}")
-    public String deleteItem(@RequestParam String email, @PathVariable String id) throws ExecutionException, InterruptedException {
+    public String deleteItem(HttpServletRequest request, @PathVariable String id) throws ExecutionException, InterruptedException {
+        String email = (String) request.getAttribute("userEmail");
         Firestore db = FirestoreClient.getFirestore();
         db.collection(USERS_COLLECTION).document(email).collection("inventory").document(id).delete().get();
         return "Item deleted successfully for " + email;
     }
 
     @GetMapping("/all")
-    public List<InventoryItem> getAllItems(@RequestParam String email) throws ExecutionException, InterruptedException {
+    public List<InventoryItem> getAllItems(HttpServletRequest request) throws ExecutionException, InterruptedException {
+        String email = (String) request.getAttribute("userEmail");
         Firestore db = FirestoreClient.getFirestore();
         ApiFuture<QuerySnapshot> future = db.collection(USERS_COLLECTION).document(email).collection("inventory").get();
         List<QueryDocumentSnapshot> docs = future.get().getDocuments();
@@ -58,7 +62,8 @@ public class InventoryController {
     }
 
     @GetMapping("/list")
-    public List<String> getInventoryItems(@RequestParam String email) throws ExecutionException, InterruptedException {
+    public List<String> getInventoryItems(HttpServletRequest request) throws ExecutionException, InterruptedException {
+        String email = (String) request.getAttribute("userEmail");
         Firestore db = FirestoreClient.getFirestore();
         CollectionReference inventoryRef = db.collection(USERS_COLLECTION).document(email).collection("inventory");
         List<QueryDocumentSnapshot> docs = inventoryRef.get().get().getDocuments();
@@ -73,7 +78,8 @@ public class InventoryController {
     }
 
     @GetMapping("/get-by-name")
-    public InventoryItem getInventoryItemByName(@RequestParam String email, @RequestParam String name) throws ExecutionException, InterruptedException {
+    public InventoryItem getInventoryItemByName(HttpServletRequest request, @RequestParam String name) throws ExecutionException, InterruptedException {
+        String email = (String) request.getAttribute("userEmail");
         Firestore db = FirestoreClient.getFirestore();
         CollectionReference inventoryRef = db.collection(USERS_COLLECTION).document(email).collection("inventory");
         Query query = inventoryRef.whereEqualTo("name", name);
@@ -86,4 +92,4 @@ public class InventoryController {
             throw new RuntimeException("Inventory item not found for: " + name);
         }
     }
-} 
+}

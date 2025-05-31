@@ -6,6 +6,7 @@ import com.google.firebase.cloud.FirestoreClient;
 import com.sellsmart.backend.model.InventoryItem;
 import com.sellsmart.backend.model.SaleItem;
 import com.sellsmart.backend.model.DailyProfit;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
@@ -14,13 +15,13 @@ import java.util.concurrent.ExecutionException;
 
 @RestController
 @RequestMapping("/api/sales")
-@CrossOrigin(origins = "https://sellsmart2025.netlify.app")
 public class SalesController {
 
     @PostMapping("/add")
-    public String addSales(@RequestParam String email, @RequestParam String date,
+    public String addSales(HttpServletRequest request, @RequestParam String date,
                            @RequestBody List<SaleItem> sales) throws ExecutionException, InterruptedException {
 
+        String email = (String) request.getAttribute("userEmail");
         Firestore db = FirestoreClient.getFirestore();
         CollectionReference inventoryRef = db.collection("users").document(email).collection("inventory");
         CollectionReference salesRef = db.collection("users").document(email)
@@ -56,29 +57,35 @@ public class SalesController {
                     existingSale.setName(matchedItem.getName());
 
                     salesRef.document(existingDoc.getId()).set(existingSale).get();
+                    System.out.println("🔁 Updated existing sale for: " + matchedItem.getName());
                 } else {
+                    DocumentReference newDoc = salesRef.document();
+                    sale.setId(newDoc.getId());
                     sale.setItemId(itemId);
                     sale.setBuyPrice(matchedItem.getBuyPrice());
                     sale.setSellPrice(matchedItem.getSellPrice());
                     sale.setName(matchedItem.getName());
                     sale.setAddedByEmail(email);
-                    sale.setId(salesRef.document().getId());
 
-                    salesRef.document(sale.getId()).set(sale).get();
+                    newDoc.set(sale).get();
+                    System.out.println("✅ New sale added for: " + matchedItem.getName());
                 }
 
                 int newQty = Math.max(0, matchedItem.getQuantity() - sale.getQuantitySold());
                 matchedItem.setQuantity(newQty);
                 inventoryRef.document(itemId).set(matchedItem).get();
+                System.out.println("📦 Inventory updated for: " + matchedItem.getName());
+            } else {
+                System.out.println("❌ No matching inventory item found for: " + sale.getName());
             }
         }
 
         return "Sales recorded and inventory updated.";
     }
-
     @DeleteMapping("/delete/{saleId}")
-    public String deleteSale(@RequestParam String email, @RequestParam String date,
+    public String deleteSale(HttpServletRequest request, @RequestParam String date,
                              @PathVariable String saleId) throws ExecutionException, InterruptedException {
+        String email = (String) request.getAttribute("userEmail");
         Firestore db = FirestoreClient.getFirestore();
         DocumentReference saleDoc = db.collection("users").document(email)
                                       .collection("sales").document(date)
@@ -104,7 +111,8 @@ public class SalesController {
     }
 
     @GetMapping("/view")
-    public List<SaleItem> viewSales(@RequestParam String email, @RequestParam String date) throws ExecutionException, InterruptedException {
+    public List<SaleItem> viewSales(HttpServletRequest request, @RequestParam String date) throws ExecutionException, InterruptedException {
+        String email = (String) request.getAttribute("userEmail");
         Firestore db = FirestoreClient.getFirestore();
         CollectionReference salesRef = db.collection("users").document(email)
                                          .collection("sales").document(date).collection("entries");
@@ -123,7 +131,8 @@ public class SalesController {
     }
 
     @GetMapping("/profit-summary")
-    public List<DailyProfit> getMonthlyProfitSummary(@RequestParam String email, @RequestParam String month) throws ExecutionException, InterruptedException {
+    public List<DailyProfit> getMonthlyProfitSummary(HttpServletRequest request, @RequestParam String month) throws ExecutionException, InterruptedException {
+        String email = (String) request.getAttribute("userEmail");
         Firestore db = FirestoreClient.getFirestore();
         CollectionReference salesRoot = db.collection("users").document(email).collection("sales");
 
@@ -159,11 +168,13 @@ public class SalesController {
 
         return summary;
     }
-    @PutMapping("/update/{saleId}")
-    public String updateSale(@RequestParam String email, @RequestParam String date,
-                            @PathVariable String saleId,
-                            @RequestBody SaleItem updatedSale) throws ExecutionException, InterruptedException {
 
+    @PutMapping("/update/{saleId}")
+    public String updateSale(HttpServletRequest request, @RequestParam String date,
+                              @PathVariable String saleId,
+                              @RequestBody SaleItem updatedSale) throws ExecutionException, InterruptedException {
+
+        String email = (String) request.getAttribute("userEmail");
         Firestore db = FirestoreClient.getFirestore();
         DocumentReference saleDoc = db.collection("users").document(email)
                                     .collection("sales").document(date)
@@ -184,7 +195,7 @@ public class SalesController {
             InventoryItem item = invSnap.toObject(InventoryItem.class);
 
             int adjustedQty = item.getQuantity() + oldQty - newQty;
-            item.setQuantity(Math.max(0, adjustedQty)); // avoid negative quantity
+            item.setQuantity(Math.max(0, adjustedQty));
 
             invRef.set(item).get();
         }
@@ -195,9 +206,9 @@ public class SalesController {
         return "✅ Sale updated and inventory adjusted.";
     }
 
-
     @GetMapping("/yearly-profit-summary")
-    public List<DailyProfit> getYearlyProfitSummary(@RequestParam String email, @RequestParam String year) throws ExecutionException, InterruptedException {
+    public List<DailyProfit> getYearlyProfitSummary(HttpServletRequest request, @RequestParam String year) throws ExecutionException, InterruptedException {
+        String email = (String) request.getAttribute("userEmail");
         Firestore db = FirestoreClient.getFirestore();
         CollectionReference salesRoot = db.collection("users").document(email).collection("sales");
 
@@ -247,10 +258,12 @@ public class SalesController {
 
         return summary;
     }
+
     @GetMapping("/between")
-    public List<SaleItem> getSalesBetweenDates(@RequestParam String email,
-                                            @RequestParam String from,
-                                            @RequestParam String to) throws ExecutionException, InterruptedException {
+    public List<SaleItem> getSalesBetweenDates(HttpServletRequest request,
+                                               @RequestParam String from,
+                                               @RequestParam String to) throws ExecutionException, InterruptedException {
+        String email = (String) request.getAttribute("userEmail");
         Firestore db = FirestoreClient.getFirestore();
         CollectionReference salesRoot = db.collection("users").document(email).collection("sales");
 
@@ -260,7 +273,6 @@ public class SalesController {
         for (DocumentReference dateRef : salesDates) {
             String date = dateRef.getId();
 
-            // If the date falls within the given range (inclusive)
             if (date.compareTo(from) >= 0 && date.compareTo(to) <= 0) {
                 CollectionReference entries = dateRef.collection("entries");
                 List<QueryDocumentSnapshot> docs = entries.get().get().getDocuments();
@@ -275,5 +287,4 @@ public class SalesController {
 
         return allSales;
     }
-
 } 

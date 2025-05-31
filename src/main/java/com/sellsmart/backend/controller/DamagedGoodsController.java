@@ -5,6 +5,7 @@ import com.google.cloud.firestore.*;
 import com.google.firebase.cloud.FirestoreClient;
 import com.sellsmart.backend.model.DamagedItem;
 import com.sellsmart.backend.model.InventoryItem;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
@@ -13,13 +14,13 @@ import java.util.concurrent.ExecutionException;
 
 @RestController
 @RequestMapping("/api/damages")
-@CrossOrigin(origins = "https://sellsmart2025.netlify.app")
 public class DamagedGoodsController {
 
     @PostMapping("/report")
-    public String reportDamagedGoods(@RequestParam String email, @RequestParam String date,
+    public String reportDamagedGoods(HttpServletRequest request, @RequestParam String date,
                                      @RequestBody List<DamagedItem> damagedItems) throws ExecutionException, InterruptedException {
 
+        String email = (String) request.getAttribute("userEmail");
         Firestore db = FirestoreClient.getFirestore();
         CollectionReference inventoryRef = db.collection("users").document(email).collection("inventory");
         CollectionReference damageRef = db.collection("users").document(email)
@@ -80,7 +81,8 @@ public class DamagedGoodsController {
     }
 
     @GetMapping("/view")
-    public List<DamagedItem> getDamagedGoods(@RequestParam String email, @RequestParam String date) throws Exception {
+    public List<DamagedItem> getDamagedGoods(HttpServletRequest request, @RequestParam String date) throws Exception {
+        String email = (String) request.getAttribute("userEmail");
         Firestore db = FirestoreClient.getFirestore();
         CollectionReference damageRef = db.collection("users").document(email)
                                           .collection("damages").document(date)
@@ -96,11 +98,13 @@ public class DamagedGoodsController {
 
         return damagedItems;
     }
+
     @PutMapping("/update/{damageId}")
-    public String updateDamagedItem(@RequestParam String email, @RequestParam String date,
+    public String updateDamagedItem(HttpServletRequest request, @RequestParam String date,
                                     @PathVariable String damageId,
                                     @RequestBody DamagedItem updatedItem) throws ExecutionException, InterruptedException {
 
+        String email = (String) request.getAttribute("userEmail");
         Firestore db = FirestoreClient.getFirestore();
         DocumentReference damageDoc = db.collection("users").document(email)
                                         .collection("damages").document(date)
@@ -129,10 +133,12 @@ public class DamagedGoodsController {
 
         return "✅ Damaged item updated and inventory adjusted.";
     }
+
     @DeleteMapping("/delete/{damageId}")
-    public String deleteDamagedItem(@RequestParam String email, @RequestParam String date,
+    public String deleteDamagedItem(HttpServletRequest request, @RequestParam String date,
                                     @PathVariable String damageId) throws ExecutionException, InterruptedException {
 
+        String email = (String) request.getAttribute("userEmail");
         Firestore db = FirestoreClient.getFirestore();
         DocumentReference damageDoc = db.collection("users").document(email)
                                         .collection("damages").document(date)
@@ -156,10 +162,12 @@ public class DamagedGoodsController {
         damageDoc.delete().get();
         return "✅ Damaged entry deleted and inventory restored.";
     }
+
     @GetMapping("/between")
-    public List<DamagedItem> getDamagedBetweenDates(@RequestParam String email,
+    public List<DamagedItem> getDamagedBetweenDates(HttpServletRequest request,
                                                     @RequestParam String from,
                                                     @RequestParam String to) throws ExecutionException, InterruptedException {
+        String email = (String) request.getAttribute("userEmail");
         Firestore db = FirestoreClient.getFirestore();
         CollectionReference damagesRoot = db.collection("users").document(email).collection("damages");
 
