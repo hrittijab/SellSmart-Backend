@@ -15,16 +15,16 @@ public class UserController {
     private UserService userService;
 
     @PostMapping("/register")
-    public ResponseEntity<String> register(@RequestBody User user) {
+    public ResponseEntity<?> register(@RequestBody User user) {
         try {
-            String result = userService.register(user);
-            if (result.contains("successfully")) {
+            Map<String, String> result = userService.register(user); 
+            if (result.containsKey("token")) {
                 return ResponseEntity.ok(result);
             } else {
                 return ResponseEntity.status(403).body(result); 
             }
         } catch (Exception e) {
-            return ResponseEntity.status(500).body("Error: " + e.getMessage());
+            return ResponseEntity.status(500).body(Map.of("error", "Internal server error"));
         }
     }
 

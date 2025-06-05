@@ -27,28 +27,34 @@ public class UserService {
     @Autowired
     private JwtUtil jwtUtil;
 
-    public String register(User user) throws ExecutionException, InterruptedException {
-        String email = user.getEmail().trim().toLowerCase();
+    public Map<String, String> register(User user) throws ExecutionException, InterruptedException {
+    String email = user.getEmail().trim().toLowerCase();
+    Map<String, String> response = new HashMap<>();
 
-        if (!authorizedEmails.contains(email)) {
-            return "Email not authorized";
-        }
-
-        Firestore db = FirestoreClient.getFirestore();
-        DocumentReference docRef = db.collection("users").document(email);
-
-        DocumentSnapshot snapshot = docRef.get().get();
-        if (snapshot.exists()) {
-            return "Already registered";
-        }
-
-        String hashedPassword = passwordEncoder.encode(user.getPassword());
-        user.setPassword(hashedPassword);
-        user.setEmail(email);
-
-        ApiFuture<WriteResult> result = docRef.set(user);
-        return "Registered successfully at: " + result.get().getUpdateTime();
+    if (!authorizedEmails.contains(email)) {
+        response.put("error", "Email not authorized");
+        return response;
     }
+
+    Firestore db = FirestoreClient.getFirestore();
+    DocumentReference docRef = db.collection("users").document(email);
+
+    DocumentSnapshot snapshot = docRef.get().get();
+    if (snapshot.exists()) {
+        response.put("error", "Already registered");
+        return response;
+    }
+
+    String hashedPassword = passwordEncoder.encode(user.getPassword());
+    user.setPassword(hashedPassword);
+    user.setEmail(email);
+
+    ApiFuture<WriteResult> result = docRef.set(user);
+    
+    String token = jwtUtil.generateToken(email);
+    response.put("token", token);
+    return response;
+}
 
     public Map<String, String> login(User user) throws ExecutionException, InterruptedException {
         String email = user.getEmail().trim().toLowerCase();
