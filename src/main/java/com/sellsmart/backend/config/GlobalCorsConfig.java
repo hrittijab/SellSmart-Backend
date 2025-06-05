@@ -32,7 +32,6 @@ public class GlobalCorsConfig {
         };
     }
 
-    // This bean is *required* for Spring Security to pick up the CORS config
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();

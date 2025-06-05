@@ -19,7 +19,7 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http, JwtRequestFilter jwtFilter) throws Exception {
         http
-            .cors() // picks up CorsConfigurationSource bean
+            .cors() 
             .and()
             .csrf().disable()
             .authorizeHttpRequests(auth -> auth
